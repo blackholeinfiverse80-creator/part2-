@@ -3,7 +3,8 @@ from models import db, Generation
 import random
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///context_intelligence.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/context_intelligence.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
 with app.app_context():
@@ -39,7 +40,7 @@ def root():
         }
     })
 
-@app.route('/generate', methods=['POST']))
+@app.route('/generate', methods=['POST'])
 def generate():
     data = request.json
     prompt = data.get('prompt', '')
