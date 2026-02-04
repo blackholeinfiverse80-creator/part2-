@@ -10,4 +10,4 @@ services:
         value: production
       - key: SQLALCHEMY_DATABASE_URI
         value: sqlite:///instance/context_intelligence.db
-    healthCheckPath: /history
+    healthCheckPath: /

@@ -27,7 +27,19 @@ def get_related_context(text, top_k=3):
     rankings.sort(key=lambda x: x[1], reverse=True)
     return [{"text": g.text, "score": round(ranking, 3)} for g, ranking in rankings[:top_k]]
 
-@app.route('/generate', methods=['POST'])
+@app.route('/')
+def root():
+    return jsonify({
+        "message": "Creator Core API",
+        "version": "1.0.0",
+        "endpoints": {
+            "generate": "POST /generate",
+            "feedback": "POST /feedback", 
+            "history": "GET /history"
+        }
+    })
+
+@app.route('/generate', methods=['POST']))
 def generate():
     data = request.json
     prompt = data.get('prompt', '')
