@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: creator-core
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SQLALCHEMY_DATABASE_URI
+        value: sqlite:///instance/context_intelligence.db
+    healthCheckPath: /history

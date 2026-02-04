@@ -4,3 +4,4 @@ sentence-transformers==2.7.0
 numpy==1.26.4
 scipy==1.13.0
 pytest==8.0.2
+gunicorn==21.0.0
