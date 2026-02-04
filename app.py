@@ -1,11 +1,6 @@
 from flask import Flask, request, jsonify
 from models import db, Generation
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
-
-# Simple TF-IDF based similarity instead of sentence transformers
-vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
+import random
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///context_intelligence.db'
@@ -19,27 +14,16 @@ def get_related_context(text, top_k=3):
     if not gens:
         return []
     
-    texts = [g.text for g in gens] + [text]
-    try:
-        tfidf_matrix = vectorizer.fit_transform(texts)
-        similarities = cosine_similarity(tfidf_matrix[-1:], tfidf_matrix[:-1]).flatten()
-    except:
-        return []
-    
-    # Normalize scores
-    scores = [g.score for g in gens]
-    min_score = min(scores) if scores else 0
-    max_score = max(scores) if scores else 1
-    if max_score == min_score:
-        norm_scores = [0.5] * len(scores)
-    else:
-        norm_scores = [(s - min_score) / (max_score - min_score) for s in scores]
-    
+    # Simple keyword-based similarity for demo
+    text_words = set(text.lower().split())
     rankings = []
-    for i, g in enumerate(gens):
-        sim = similarities[i] if i < len(similarities) else 0
-        ranking = 0.7 * sim + 0.3 * norm_scores[i]
+    
+    for g in gens:
+        gen_words = set(g.text.lower().split())
+        similarity = len(text_words.intersection(gen_words)) / max(len(text_words.union(gen_words)), 1)
+        ranking = 0.7 * similarity + 0.3 * (g.score / 10.0)  # Normalize score
         rankings.append((g, ranking))
+    
     rankings.sort(key=lambda x: x[1], reverse=True)
     return [{"text": g.text, "score": round(ranking, 3)} for g, ranking in rankings[:top_k]]
 
