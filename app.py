@@ -2,13 +2,18 @@ from flask import Flask, request, jsonify
 from models import db, Generation
 import random
 import os
+import tempfile
 
 app = Flask(__name__)
 
-# Create instance directory if it doesn't exist
-os.makedirs('instance', exist_ok=True)
+# Use temp directory for database on Render
+if os.environ.get('RENDER'):
+    db_path = os.path.join(tempfile.gettempdir(), 'context_intelligence.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+else:
+    os.makedirs('instance', exist_ok=True)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/context_intelligence.db'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/context_intelligence.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
