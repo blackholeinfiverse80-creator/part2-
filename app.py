@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify
 from models import db, Generation
-from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-from scipy.spatial.distance import cosine
 
-model = SentenceTransformer('all-MiniLM-L6-v2')
+# Simple TF-IDF based similarity instead of sentence transformers
+vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///context_intelligence.db'
@@ -14,9 +15,15 @@ with app.app_context():
     db.create_all()
 
 def get_related_context(text, top_k=3):
-    emb = model.encode(text)
-    gens = Generation.query.filter(Generation.embedding.isnot(None)).all()
+    gens = Generation.query.filter(Generation.text.isnot(None)).all()
     if not gens:
+        return []
+    
+    texts = [g.text for g in gens] + [text]
+    try:
+        tfidf_matrix = vectorizer.fit_transform(texts)
+        similarities = cosine_similarity(tfidf_matrix[-1:], tfidf_matrix[:-1]).flatten()
+    except:
         return []
     
     # Normalize scores
@@ -30,7 +37,7 @@ def get_related_context(text, top_k=3):
     
     rankings = []
     for i, g in enumerate(gens):
-        sim = 1 - cosine(emb, np.array(g.embedding))
+        sim = similarities[i] if i < len(similarities) else 0
         ranking = 0.7 * sim + 0.3 * norm_scores[i]
         rankings.append((g, ranking))
     rankings.sort(key=lambda x: x[1], reverse=True)
@@ -43,11 +50,8 @@ def generate():
     # Simulate generation - in real scenario, this would call an AI model
     generated_text = prompt + " generated content."
     
-    # Generate embedding
-    emb = model.encode(generated_text).tolist()
-    
-    # Save to DB
-    gen = Generation(text=generated_text, embedding=emb)
+    # Save to DB (no embedding needed with TF-IDF)
+    gen = Generation(text=generated_text)
     db.session.add(gen)
     db.session.commit()
     
